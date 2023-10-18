@@ -11,6 +11,7 @@ import { transformAST as removeVueUse } from './remove-vue-use'
 import { transformAST as removeContextualHFromRender } from './remove-contextual-h-from-render'
 
 import { transformAST as removeExtraneousImport } from './remove-extraneous-import'
+import { transformAST as removeAutoImport } from './remove-auto-import'
 
 export const transformAST: ASTTransformation = (context) => {
   vueAsNamespaceImport(context)
@@ -20,6 +21,7 @@ export const transformAST: ASTTransformation = (context) => {
   rootPropToUse(context, { rootPropName: 'router' })
   removeTrivialRoot(context)
   removeProductionTip(context)
+  removeAutoImport(context)
 
   // TODO:
   // should analyze the AST to get the default import of vue-router and vuex,

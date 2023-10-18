@@ -25,6 +25,7 @@ const transformationMap: {
   'remove-vue-use': require('./remove-vue-use'),
   'root-prop-to-use': require('./root-prop-to-use'),
   'vue-as-namespace-import': require('./vue-as-namespace-import'),
+  'remove-auto-import': require('./remove-auto-import'),
 
   // generic utility tranformations
   'add-import': require('./add-import'),

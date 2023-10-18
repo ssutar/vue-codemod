@@ -1,10 +1,14 @@
 <template>
   <p>{{ greeting }} World!</p>
-<CC>deshfhfjd</CC>	
+<FA>djskkjds</FA>
+<CC>wjdjl</CC>
 </template>
 
 <script>
 import { defineComponent } from "vue";
+import CC from "~/components/CC";
+
+import FA from "~/components/FA";
 
 export default defineComponent({
   data() {
@@ -21,3 +25,4 @@ p {
   text-align: center;
 }
 </style>
+

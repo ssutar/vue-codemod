@@ -1,10 +1,12 @@
 <template>
   <p>{{ greeting }} World!</p>
-<CC>deshfhfjd</CC>	
+  <CC>sajdshjahj</CC>
+  <FA>sdncjcdjs</FA>
 </template>
 
 <script>
 import { defineComponent } from "vue";
+import CC from "~/components/CC";
 
 export default defineComponent({
   data() {

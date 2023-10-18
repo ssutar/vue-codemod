@@ -16,7 +16,8 @@ type FileInfo = {
 }
 
 type JSTransformation = Transform & {
-  parser?: string | Parser
+  parser?: string | Parser,
+  descriptor?: SFCDescriptor
 }
 
 type JSTransformationModule =
@@ -37,7 +38,7 @@ type TransformationModule = JSTransformationModule | VueTransformationModule
 export default function runTransformation(
   fileInfo: FileInfo,
   transformationModule: TransformationModule,
-  params: object = {}
+  params: { [key: string]: any; } = {}
 ) {
   let transformation: VueTransformation | JSTransformation
   // @ts-ignore
@@ -67,7 +68,6 @@ export default function runTransformation(
     if (!descriptor.script) {
       return source
     }
-
     lang = descriptor.script.lang || 'js'
     fileInfo.source = descriptor.script.content
   }
@@ -94,6 +94,7 @@ export default function runTransformation(
     report: () => {},
   }
 
+  params.descriptor = descriptor!
   const out = transformation(fileInfo, api, params)
   if (!out) {
     return source // skipped
