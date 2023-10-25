@@ -19,7 +19,6 @@ export default function astTransformationToJSCodeshiftModule<Params = any>(
   const transform: Transform = (file, api, options: Params & { descriptor: SFCDescriptor }) => {
     const j = api.jscodeshift
     const root = j(file.source)
-    // const options.descriptor = descriptor
 
     transformAST({ root, j, filename: file.path, descriptor: options?.descriptor }, options)
 

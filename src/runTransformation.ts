@@ -61,15 +61,23 @@ export default function runTransformation(
   let lang = extension.slice(1)
 
   let descriptor: SFCDescriptor
+  let hasScriptSetup = false
   if (extension === '.vue') {
     descriptor = parseSFC(source, { filename: path }).descriptor
 
+    if (descriptor.scriptSetup && !descriptor.script) {
+      hasScriptSetup = true
+    }
     // skip .vue files without script block
-    if (!descriptor.script) {
+    if (!descriptor.script && !descriptor.scriptSetup) {
       return source
     }
-    lang = descriptor.script.lang || 'js'
-    fileInfo.source = descriptor.script.content
+
+    if (descriptor.scriptSetup && descriptor.script) {
+      console.error(`${path} Found both script and script setup`)
+    }
+    lang = descriptor.script?.lang || descriptor.scriptSetup?.lang || 'js'
+    fileInfo.source = descriptor.script?.content || descriptor.scriptSetup?.content || ''
   }
 
   let parser = getParser()
@@ -102,11 +110,14 @@ export default function runTransformation(
 
   // need to reconstruct the .vue file from descriptor blocks
   if (extension === '.vue') {
-    if (out === descriptor!.script!.content) {
+    if (out === descriptor!.script!?.content) {
       return source // skipped, don't bother re-stringifying
     }
-
-    descriptor!.script!.content = out
+    if (hasScriptSetup) {
+      descriptor!.scriptSetup!.content  = out
+    } else {
+      descriptor!.script!.content = out
+    }
     return stringifySFC(descriptor!)
   }
 

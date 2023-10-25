@@ -1,4 +1,4 @@
-import { ImportDefaultSpecifier, ImportNamespaceSpecifier, ImportSpecifier } from 'jscodeshift';
+import { ImportDefaultSpecifier, ImportNamespaceSpecifier, ImportSpecifier, StringLiteral } from 'jscodeshift';
 import wrap from '../src/wrapAstTransformation'
 import type { ASTTransformation } from '../src/wrapAstTransformation'
 
@@ -14,8 +14,24 @@ const COMPONENTS_TO_IGNORE = [
   'Teleport',
   'TransitionGroup',
   'RouterLink',
-  'RouterView'
+  'RouterView',
+  'ShareNetwork',
+  'KeepAlive',
+  'VDropdown',
+  'VMenu',
+  'VTooltip',
 ]
+
+function toPascalCase(text: string) {
+  if (text === 'i18n' || text === 'si18n') {
+    return text
+  }
+  return text.replace(/(^\w|-\w)/g, clearAndUpper);
+}
+
+function clearAndUpper(text: string) {
+  return text.replace(/-/, "").toUpperCase();
+}
 
 function getAllFiles(dirPath: string, arrayOfFiles: string[]) {
   const files = fs.readdirSync(dirPath)
@@ -41,7 +57,12 @@ function createComponentsPathMap() {
   allComponentPaths.forEach(function(componentPath) {
     const relativePath = componentPath
       .replace(`${PATH_TO_COMPONENTS_FOLDER}/`, '')
-    const componentName = relativePath.replace('/index', '').replace(/\//g, '').replace('.vue', '')
+      .replace('.ts', '')
+    const componentName = relativePath
+                            .replace('/index', '')
+                            .replace(/\//g, '')
+                            .replace('.vue', '')
+                            .toLowerCase()
     map[componentName] = relativePath
   })
 
@@ -53,33 +74,36 @@ const componentPathMap = createComponentsPathMap()
 export const transformAST: ASTTransformation = (
   context
 ) => {
-  const { filename } = context
   const content = context.descriptor?.template?.content;
+
   if (!content) {
     return
   }
+
   const templateContent = content.replace(/<!--[\s\S]+-->/g, '')
+
   const components = [
     ...new Set(
-      (templateContent.match(/<([A-Z]\w+)(>|\n|\s)/g) || [])
+      (templateContent.match(/<(([A-Z]\w+)|((\w+\-\w+)(\-\w+)*)|i18n|si18n)(>|\n|\s)/g) || [])
         .map(component => {
-            return component
-            .replace('<', '')
-            .replace('>', '')
-            .replace('\n', '')
-            .trim()
+          return toPascalCase(
+            component
+              .replace('<', '')
+              .replace('>', '')
+              .replace('\n', '')
+              .trim()
+            )
           }
         )
       )
-    ]
+    ];
+
   if (!components?.length) {
     return
   }
 
-  console.log(filename, components)
-
   components.forEach((component) => {
-    const { root, j } = context
+    const { root, j, filename } = context
 
     if (COMPONENTS_TO_IGNORE.includes(component)) {
       return
@@ -96,6 +120,19 @@ export const transformAST: ASTTransformation = (
     })
 
     if (duplicate.length) {
+      return
+    }
+
+    const isDefinedAsync = root.find(j.CallExpression, {
+      callee: {
+        type: 'Import'
+      },
+      arguments: (arr: Array<StringLiteral>) => arr.some((s) => {
+        return s.value.includes(component) || s.value.includes(componentPathMap[component.toLowerCase()])
+      })
+    })
+
+    if (isDefinedAsync.length) {
       return
     }
 
@@ -131,7 +168,11 @@ export const transformAST: ASTTransformation = (
        defaultExport.find(j.ObjectExpression).get('properties').unshift(compProp)
     }
 
-    const importPath = componentPathMap[component]
+    const importPath = componentPathMap[component.toLowerCase()]
+
+    if (!importPath) {
+      console.warn(`${filename}: could not find import path for ${component}`)
+    }
 
     addImport(context, {
       specifier: { type: 'default', local: component },
