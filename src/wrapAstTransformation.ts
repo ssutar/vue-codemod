@@ -18,11 +18,13 @@ export default function astTransformationToJSCodeshiftModule<Params = any>(
 ): Transform {
   const transform: Transform = (file, api, options: Params & { descriptor: SFCDescriptor }) => {
     const j = api.jscodeshift
-    const root = j(file.source)
-
-    transformAST({ root, j, filename: file.path, descriptor: options?.descriptor }, options)
-
-    return root.toSource({ lineTerminator: '\n' })
+    try {
+      const root = j(file.source)
+      transformAST({ root, j, filename: file.path, descriptor: options?.descriptor }, options)
+      return root.toSource({ lineTerminator: '\n' })
+    } catch (e) {
+      console.log(`Error for ${file.path} `, e)
+    }
   }
 
   return transform

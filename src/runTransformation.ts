@@ -58,7 +58,7 @@ export default function runTransformation(
 
   const { path, source } = fileInfo
   const extension = (/\.([^.]*)$/.exec(path) || [])[0]
-  let lang = extension.slice(1)
+  let lang = extension?.slice(1)
 
   let descriptor: SFCDescriptor
   let hasScriptSetup = false

@@ -80,8 +80,7 @@ export const transformAST: ASTTransformation = (
     return
   }
 
-  const templateContent = content.replace(/<!--[\s\S]+-->/g, '')
-
+  const templateContent = content.replaceAll(/<!--(.|\s)*?-->/g, '')
   const components = [
     ...new Set(
       (templateContent.match(/<(([A-Z]\w+)|((\w+\-\w+)(\-\w+)*)|i18n|si18n)(>|\n|\s)/g) || [])
@@ -102,24 +101,12 @@ export const transformAST: ASTTransformation = (
     return
   }
 
+  // console.log(components)
+
   components.forEach((component) => {
     const { root, j, filename } = context
 
     if (COMPONENTS_TO_IGNORE.includes(component)) {
-      return
-    }
-
-    const duplicate = root.find(j.ImportDeclaration, {
-      specifiers: (
-        arr: Array<
-          ImportSpecifier | ImportDefaultSpecifier | ImportNamespaceSpecifier
-        >
-      ) =>
-        // @ts-ignore there's a bug in ast-types definition, the `local` should be non-nullable
-        arr.some((s) => s.local.name === component),
-    })
-
-    if (duplicate.length) {
       return
     }
 
@@ -168,6 +155,20 @@ export const transformAST: ASTTransformation = (
        defaultExport.find(j.ObjectExpression).get('properties').unshift(compProp)
     }
 
+    const duplicate = root.find(j.ImportDeclaration, {
+      specifiers: (
+        arr: Array<
+          ImportSpecifier | ImportDefaultSpecifier | ImportNamespaceSpecifier
+        >
+      ) =>
+        // @ts-ignore there's a bug in ast-types definition, the `local` should be non-nullable
+        arr.some((s) => s.local.name === component),
+    })
+
+    if (duplicate.length) {
+      return
+    }
+
     const importPath = componentPathMap[component.toLowerCase()]
 
     if (!importPath) {
@@ -182,4 +183,4 @@ export const transformAST: ASTTransformation = (
 }
 
 export default wrap(transformAST)
-export const parser = 'babylon'
+export const parser = 'ts'
